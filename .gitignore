@@ -1,0 +1,6 @@
+.idea
+venv
+target
+*.egg-info
+*.dot
+*.pyc
