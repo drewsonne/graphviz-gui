@@ -1,1 +1,1 @@
-# graphviz-visualiser
+# graphviz-gui
