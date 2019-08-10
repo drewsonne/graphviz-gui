@@ -1,70 +1,26 @@
+import os
 import sys
 import tempfile
-import threading
-import time
-from abc import ABC, abstractmethod
 
 import click
 import pydot
-from PyQt5 import QtSvg
-from PyQt5.QtCore import QFile, Qt, QSize, QTimer
-from PyQt5.QtGui import QBrush, QColor, QImage, QPainter, QPixmap, QPen
+from PyQt5 import QtWidgets
+from PyQt5.QtCore import QFile, QTimer, QSize
 from PyQt5.QtGui import QIcon
-from PyQt5.QtOpenGL import QGL, QGLFormat, QGLWidget
-from PyQt5.QtSvg import QGraphicsSvgItem
-from PyQt5.QtWidgets import QAction
-from PyQt5.QtWidgets import (QFileDialog,
-                             QGraphicsItem, QGraphicsRectItem, QGraphicsScene, QGraphicsView,
-                             QMainWindow, QMessageBox, QWidget)
-from fbs_runtime.application_context.PyQt5 import ApplicationContext
-import sys
-from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtWidgets import QMainWindow, QLabel, QGridLayout, QWidget
-from PyQt5.QtCore import QSize
+from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox, \
+    QMainWindow
 
-
-class Thread(ABC):
-    def __init__(self):
-        self._runtime_thread = None
-        self._do_run = False
-        self._sleep = 60
-        self._is_running = False
-
-    def start(self):
-        self._do_run = True
-        self._runtime_thread = threading.Thread(
-            target=self._runtime,
-            args=()
-        )
-        self._runtime_thread.daemon = True
-        self._runtime_thread.start()
-
-    def _runtime(self):
-        self._is_running = True
-        while (self._do_run):
-            self.run()
-            time.sleep(self._sleep)
-
-        self._is_running = False
-
-        self.clean_up()
-
-    def end(self):
-        self._do_run = False
-
-    def clean_up(self): ...
-
-    @abstractmethod
-    def run(self): ...
-
-    @property
-    def is_running(self):
-        return self._is_running
+from graphviz_gui.svg import SvgView
 
 
 class GraphvizCanvas(QMainWindow):
 
-    def __init__(self, app: QtWidgets.QApplication, initial_dot_file=None):
+    def __init__(
+            self,
+            app: QtWidgets.QApplication,
+            working_directory: str,
+            initial_dot_file: str = None,
+    ):
         super().__init__()
         self._view = None
         self._app = app
@@ -78,7 +34,7 @@ class GraphvizCanvas(QMainWindow):
 
         self._open_file = None
         if initial_dot_file is not None:
-            self._open_file_name = initial_dot_file
+            self._open_file_name = os.path.join(working_directory, initial_dot_file)
             self._do_timer = True
 
     def init_ui(self):
@@ -102,6 +58,7 @@ class GraphvizCanvas(QMainWindow):
 
         self.view = SvgView()
         self.view.outlineItem = False
+        self.view.setRenderer(SvgView.OpenGL)
         self.setCentralWidget(self.view)
 
         self.setWindowTitle('Graphviz Editor')
@@ -123,16 +80,22 @@ class GraphvizCanvas(QMainWindow):
     def open_file(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        fileName, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "",
-                                                  "Graphviz Files (*.dot);;All Files (*);;Python Files (*.py)", options=options)
+        fileName, _ = QFileDialog.getOpenFileName(
+            self,
+            "QFileDialog.getOpenFileName()",
+            "",
+            "Graphviz Files (*.dot);;All Files (*)",
+            options=options
+        )
         if fileName:
             self._open_file_name = fileName
             self._open_file = QFile(self._open_file_name)
             if not self._open_file.exists():
                 QMessageBox.critical(self, "Open SVG File",
                                      "Could not open file '%s'." % self._open_file)
-            self._do_timer = True
-            self.flush()
+            else:
+                self._do_timer = True
+                self.flush()
 
     def flush(self):
         (graph,) = pydot.graph_from_dot_file(self._open_file_name)
@@ -143,105 +106,12 @@ class GraphvizCanvas(QMainWindow):
         self.resize(self.view.sizeHint() + QSize(80, 80 + self.menuBar().height()))
 
 
-class SvgView(QGraphicsView):
-    Native, OpenGL, Image = range(3)
-
-    def __init__(self, parent=None):
-        super(SvgView, self).__init__(parent)
-
-        self.renderer = SvgView.Native
-        self.svgItem = None
-        self.backgroundItem = None
-        self.outlineItem = None
-        self.image = QImage()
-
-        self.setScene(QGraphicsScene(self))
-        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
-        self.setDragMode(QGraphicsView.ScrollHandDrag)
-        self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
-
-    def drawBackground(self, p, rect):
-        p.save()
-        p.resetTransform()
-        p.drawTiledPixmap(self.viewport().rect(),
-                          self.backgroundBrush().texture())
-        p.restore()
-
-    def openFile(self, svg_file):
-        if not svg_file.exists():
-            return
-
-        s = self.scene()
-
-        if self.backgroundItem:
-            drawBackground = self.backgroundItem.isVisible()
-        else:
-            drawBackground = False
-
-        if self.outlineItem:
-            drawOutline = self.outlineItem.isVisible()
-        else:
-            drawOutline = True
-
-        s.clear()
-        self.resetTransform()
-
-        self.svgItem = QGraphicsSvgItem(svg_file.fileName())
-        self.svgItem.setFlags(QGraphicsItem.ItemClipsToShape)
-        self.svgItem.setCacheMode(QGraphicsItem.NoCache)
-        self.svgItem.setZValue(0)
-
-        s.addItem(self.svgItem)
-
-    def setRenderer(self, renderer):
-        self.renderer = renderer
-
-        if self.renderer == SvgView.OpenGL:
-            if QGLFormat.hasOpenGL():
-                self.setViewport(QGLWidget(QGLFormat(QGL.SampleBuffers)))
-        else:
-            self.setViewport(QWidget())
-
-    def setHighQualityAntialiasing(self, highQualityAntialiasing):
-        if QGLFormat.hasOpenGL():
-            self.setRenderHint(QPainter.HighQualityAntialiasing,
-                               highQualityAntialiasing)
-
-    def setViewBackground(self, enable):
-        if self.backgroundItem:
-            self.backgroundItem.setVisible(enable)
-
-    def setViewOutline(self, enable):
-        if self.outlineItem:
-            self.outlineItem.setVisible(enable)
-
-    def paintEvent(self, event):
-        if self.renderer == SvgView.Image:
-            if self.image.size() != self.viewport().size():
-                self.image = QImage(self.viewport().size(),
-                                    QImage.Format_ARGB32_Premultiplied)
-
-            imagePainter = QPainter(self.image)
-            QGraphicsView.render(self, imagePainter)
-            imagePainter.end()
-
-            p = QPainter(self.viewport())
-            p.drawImage(0, 0, self.image)
-        else:
-            super(SvgView, self).paintEvent(event)
-
-    def wheelEvent(self, event):
-        factor = pow(1.2, event.delta() / 240.0)
-        self.scale(factor, factor)
-        event.accept()
-
-
 @click.command()
 @click.argument('dot_file', default=None)
 def main(dot_file=None):
     app = QtWidgets.QApplication(sys.argv)
 
-    canvas = GraphvizCanvas(app, dot_file)
+    canvas = GraphvizCanvas(app, os.getcwd(), dot_file)
     canvas.show()
 
     exit_code = app.exec_()  # 2. Invoke appctxt.app.exec_()

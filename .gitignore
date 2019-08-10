@@ -5,3 +5,4 @@ target
 *.dot
 *.pyc
 *.png
+.eggs
