@@ -10,8 +10,6 @@ setup(
     author_email='',
     description='',
     entry_points={
-        'console_scripts': [
-            'graphviz-gui=graphviz_gui.main:main'
-        ]
+        'console_scripts': ['graphviz-gui=graphviz_gui.main:main']
     }
 )

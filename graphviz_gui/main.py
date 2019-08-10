@@ -64,7 +64,7 @@ class Thread(ABC):
 
 class GraphvizCanvas(QMainWindow):
 
-    def __init__(self, app: QtWidgets.QApplication):
+    def __init__(self, app: QtWidgets.QApplication, initial_dot_file=None):
         super().__init__()
         self._view = None
         self._app = app
@@ -77,6 +77,9 @@ class GraphvizCanvas(QMainWindow):
         self.init_ui()
 
         self._open_file = None
+        if initial_dot_file is not None:
+            self._open_file_name = initial_dot_file
+            self._do_timer = True
 
     def init_ui(self):
         exit_action = QAction(QIcon('exit.png'), '&Exit', self)
@@ -88,6 +91,7 @@ class GraphvizCanvas(QMainWindow):
         open_action.setShortcut('Ctrl+O')
         open_action.setStatusTip('Open GraphViz dot file')
         open_action.triggered.connect(self.open_file)
+        self._error_dialog = QtWidgets.QErrorMessage()
 
         self.statusBar()
 
@@ -109,14 +113,18 @@ class GraphvizCanvas(QMainWindow):
         self.reload_timer.start()
 
     def run_timer(self):
-        if self._do_timer:
-            self.flush()
+        try:
+            if self._do_timer:
+                self.flush()
+        except Exception as e:
+            self._do_timer = False
+            self._error_dialog.showMessage(str(e))
 
     def open_file(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
         fileName, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "",
-                                                  "All Files (*);;Python Files (*.py)", options=options)
+                                                  "Graphviz Files (*.dot);;All Files (*);;Python Files (*.py)", options=options)
         if fileName:
             self._open_file_name = fileName
             self._open_file = QFile(self._open_file_name)
@@ -228,12 +236,12 @@ class SvgView(QGraphicsView):
         event.accept()
 
 
-# @click.command()
-# @click.argument('dot_file', default=None)
+@click.command()
+@click.argument('dot_file', default=None)
 def main(dot_file=None):
     app = QtWidgets.QApplication(sys.argv)
 
-    canvas = GraphvizCanvas(app)
+    canvas = GraphvizCanvas(app, dot_file)
     canvas.show()
 
     exit_code = app.exec_()  # 2. Invoke appctxt.app.exec_()

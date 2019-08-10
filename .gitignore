@@ -4,3 +4,4 @@ target
 *.egg-info
 *.dot
 *.pyc
+*.png
