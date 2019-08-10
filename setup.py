@@ -6,7 +6,10 @@ setup(
     packages=['graphviz_gui'],
     url='https://github.com/drewsonne/graphviz-gui',
     use_scm_version=True,
-    setup_requires=['setuptools_scm'],
+    setup_requires=[
+        'setuptools_scm',
+        'setuptools_scm_git_archive'
+    ],
     license='LGPLv2',
     author='drews',
     author_email='',
