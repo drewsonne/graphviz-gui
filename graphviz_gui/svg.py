@@ -24,8 +24,7 @@ class SvgView(QGraphicsView):
     def drawBackground(self, p, rect):
         p.save()
         p.resetTransform()
-        p.drawTiledPixmap(self.viewport().rect(),
-                          self.backgroundBrush().texture())
+        p.drawTiledPixmap(self.viewport().rect(), self.backgroundBrush().texture())
         p.restore()
 
     def openFile(self, svg_file):
@@ -65,8 +64,9 @@ class SvgView(QGraphicsView):
 
     def setHighQualityAntialiasing(self, highQualityAntialiasing):
         if QGLFormat.hasOpenGL():
-            self.setRenderHint(QPainter.HighQualityAntialiasing,
-                               highQualityAntialiasing)
+            self.setRenderHint(
+                QPainter.HighQualityAntialiasing, highQualityAntialiasing
+            )
 
     def setViewBackground(self, enable):
         if self.backgroundItem:
@@ -79,8 +79,9 @@ class SvgView(QGraphicsView):
     def paintEvent(self, event):
         if self.renderer == SvgView.Image:
             if self.image.size() != self.viewport().size():
-                self.image = QImage(self.viewport().size(),
-                                    QImage.Format_ARGB32_Premultiplied)
+                self.image = QImage(
+                    self.viewport().size(), QImage.Format_ARGB32_Premultiplied
+                )
 
             imagePainter = QPainter(self.image)
             QGraphicsView.render(self, imagePainter)

@@ -7,19 +7,17 @@ import pydot
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QFile, QTimer, QSize
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox, \
-    QMainWindow
+from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox, QMainWindow
 
 from graphviz_gui.svg import SvgView
 
 
 class GraphvizCanvas(QMainWindow):
-
     def __init__(
-            self,
-            app: QtWidgets.QApplication,
-            working_directory: str,
-            initial_dot_file: str = None,
+        self,
+        app: QtWidgets.QApplication,
+        working_directory: str,
+        initial_dot_file: str = None,
     ):
         super().__init__()
         self._view = None
@@ -27,7 +25,7 @@ class GraphvizCanvas(QMainWindow):
 
         self._do_timer = False
 
-        self._output = tempfile.NamedTemporaryFile(suffix='.svg')
+        self._output = tempfile.NamedTemporaryFile(suffix=".svg")
         self.output = QFile(self._output.name)
 
         self.init_ui()
@@ -38,21 +36,21 @@ class GraphvizCanvas(QMainWindow):
             self._do_timer = True
 
     def init_ui(self):
-        exit_action = QAction(QIcon('exit.png'), '&Exit', self)
-        exit_action.setShortcut('Ctrl+Q')
-        exit_action.setStatusTip('Exit GraphViz Editor')
+        exit_action = QAction(QIcon("exit.png"), "&Exit", self)
+        exit_action.setShortcut("Ctrl+Q")
+        exit_action.setStatusTip("Exit GraphViz Editor")
         exit_action.triggered.connect(self._app.quit)
 
-        open_action = QAction(QIcon('SP_DialogOpenButton'), '&Open...', self)
-        open_action.setShortcut('Ctrl+O')
-        open_action.setStatusTip('Open GraphViz dot file')
+        open_action = QAction(QIcon("SP_DialogOpenButton"), "&Open...", self)
+        open_action.setShortcut("Ctrl+O")
+        open_action.setStatusTip("Open GraphViz dot file")
         open_action.triggered.connect(self.open_file)
         self._error_dialog = QtWidgets.QErrorMessage()
 
         self.statusBar()
 
         menubar = self.menuBar()
-        file_menu = menubar.addMenu('&File')
+        file_menu = menubar.addMenu("&File")
         file_menu.addAction(open_action)
         file_menu.addAction(exit_action)
 
@@ -61,7 +59,7 @@ class GraphvizCanvas(QMainWindow):
         self.view.setRenderer(SvgView.OpenGL)
         self.setCentralWidget(self.view)
 
-        self.setWindowTitle('Graphviz Editor')
+        self.setWindowTitle("Graphviz Editor")
         self.resize(250, 150)
 
         self.reload_timer = QTimer()
@@ -85,14 +83,15 @@ class GraphvizCanvas(QMainWindow):
             "QFileDialog.getOpenFileName()",
             "",
             "Graphviz Files (*.dot);;All Files (*)",
-            options=options
+            options=options,
         )
         if fileName:
             self._open_file_name = fileName
             self._open_file = QFile(self._open_file_name)
             if not self._open_file.exists():
-                QMessageBox.critical(self, "Open SVG File",
-                                     "Could not open file '%s'." % self._open_file)
+                QMessageBox.critical(
+                    self, "Open SVG File", "Could not open file '%s'." % self._open_file
+                )
             else:
                 self._do_timer = True
                 self.flush()
@@ -107,7 +106,7 @@ class GraphvizCanvas(QMainWindow):
 
 
 @click.command()
-@click.argument('dot_file', default=None)
+@click.argument("dot_file", default=None)
 def main(dot_file=None):
     app = QtWidgets.QApplication(sys.argv)
 
@@ -118,5 +117,5 @@ def main(dot_file=None):
     sys.exit(exit_code)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
