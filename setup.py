@@ -11,8 +11,8 @@ setup(
         'setuptools_scm_git_archive'
     ],
     license='LGPLv2',
-    author='drews',
-    author_email='',
+    author='Drew J. Sonne',
+    author_email='drew.sonne@gmail.com',
     description='',
     entry_points={
         'console_scripts': ['graphviz-gui=graphviz_gui.main:main']
