@@ -1,4 +1,0 @@
-PyQt5==5.9.2
-pydot
-pyinstaller
-click
