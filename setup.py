@@ -17,6 +17,10 @@ setup(
     entry_points={
         'console_scripts': ['graphviz-gui=graphviz_gui.main:main']
     },
-
+    install_requires=["PyQt5==5.9.2",
+"pydot",
+"pyinstaller",
+"click"
+]
 
 )
